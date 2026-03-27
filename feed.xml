@@ -1,0 +1,60 @@
+---
+layout: null
+author: joerg
+feed-tags:
+  - Solaris
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+xmlns:atom="http://www.w3.org/2005/Atom"
+xmlns:dc="http://purl.org/dc/elements/1.1/"
+xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel>
+<title>{{ site.data.settings.title | xml_escape }}</title>
+<description>{{ site.data.settings.description | xml_escape }}</description>
+<link>{{ "/" | absolute_url }}</link>
+<atom:link href="{{ page.url | absolute_url }}" rel="self" type="application/rss+xml"/>
+<language>{{ site.lang | default: "de" }}</language>
+<lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
+    {% assign itemcount = 0 %}
+    {% for post in site.posts %}
+    {% if itemcount >= 20 %}{% break %}{% endif %}
+    {% if page.author %}
+    {% assign author_lower = page.author | downcase %}
+    {% assign postauthor_lower = post.author | downcase %}
+    {% if postauthor_lower != author_lower %}{% continue %}{% endif %}
+    {% endif %}
+    {% if page.feed_tags and page.feed_tags.size > 0 %}
+    {% assign all_tags_match = true %}
+    {% for ft in page.feed_tags %}
+    {% assign ft_lower = ft | downcase %}
+    {% assign post_tags_lower = post.tags | join: "|||" | downcase %}
+    {% unless post_tags_lower contains ft_lower %}
+    {% assign all_tags_match = false %}
+    {% break %}
+    {% endunless %}
+    {% endfor %}
+    {% unless all_tags_match %}{% continue %}{% endunless %}
+    {% endif %}
+    {% assign itemcount = itemcount | plus: 1 %}
+<item>
+<title>{{ post.title | xml_escape }}</title>
+<description>{% if post.description %}{{ post.description | xml_escape }}{% else %}{{ post.excerpt | strip_html | truncatewords: 50 | xml_escape }}{% endif %}</description>
+<content:encoded>{% if post.republication %}{{ '<p><small>(originally published on ' | append: post.repub_original | append: ', reviewed/rewritten on ' | append: post.repub_reviewed | append: ', tested on ' | append: post.repub_tested | append: ')</small></p>' | xml_escape }}
+{% endif %}{{ post.content | rss_cleanup: post.url | xml_escape }}</content:encoded>
+<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
+<link>{{ post.url | absolute_url }}</link>
+<guid isPermaLink="true">{{ post.url | absolute_url }}</guid>
+      {% if post.author %}
+<dc:creator>{{ post.author | xml_escape }}</dc:creator>
+      {% endif %}
+      {% for tag in post.tags %}
+<category>{{ tag | xml_escape }}</category>
+      {% endfor %}
+      {% for category in post.categories %}
+<category>{{ category | xml_escape }}</category>
+      {% endfor %}
+</item>
+    {% endfor %}
+</channel>
+</rss>
