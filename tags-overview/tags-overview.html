@@ -1,0 +1,409 @@
+---
+layout: default
+title: Tags
+permalink: /tags-overview/
+---
+
+<style>
+  /* ── Tags Container ────────────────────── */
+  .archive {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  .archive__header {
+    margin-bottom: 40px;
+  }
+
+  .archive__title {
+    font-size: 45px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 6px;
+  }
+
+  .archive__count {
+    font-size: 15px;
+    color: #b0b0b0;
+    margin: 0;
+  }
+
+  /* ── Shared <details> reset ─────────────── */
+  .archive details {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .archive summary {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .archive summary::-webkit-details-marker,
+  .archive summary::marker {
+    display: none;
+    content: "";
+  }
+
+  /* ── Chevron icon ───────────────────────── */
+  .archive summary .chevron {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .archive details[open] > summary .chevron {
+    transform: rotate(90deg);
+  }
+
+  /* ── Tag level (same as year) ──────────── */
+  .archive-year {
+    margin-bottom: 8px;
+  }
+
+  .archive-year > summary {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 2px solid #b0b0b0;
+    margin-bottom: 4px;
+    transition: color 0.2s ease;
+  }
+
+  .archive-year > summary:hover {
+    color: #213bf9;
+  }
+
+  .archive-year__label {
+    font-size: 24px;
+    font-weight: 700;
+    color: inherit;
+    letter-spacing: -0.01em;
+  }
+
+  .archive-year__badge {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 500;
+    color: #000000;
+    background: #f4f4f5;
+    border-radius: 12px;
+    padding: 2px 10px;
+    line-height: 1.6;
+  }
+
+  .archive-year__content {
+    padding: 8px 0 16px;
+  }
+
+  /* ── Post list ──────────────────────────── */
+  .archive-posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .archive-post {
+    display: flex;
+    gap: 2ch;
+    align-items: baseline;
+    padding: 10px 0 10px 24px;
+  }
+
+  .archive-post__day {
+    flex-shrink: 0;
+    width: 70px;
+    text-align: right;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    color: #a0a0a0;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .archive-post__body {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .archive-post__link {
+    font-size: 17.5px;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    line-height: 1.4;
+    transition: color 0.2s ease;
+  }
+
+  .archive-post__link:hover {
+    color: #213bf9;
+  }
+
+  .archive-post__desc {
+    margin: 3px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #b0b0b0;
+  }
+
+  .archive-post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 5px 0 0;
+  }
+
+  .archive-post__tag {
+    font-size: 12.6px;
+    color: #b0b0b0;
+    background: #2a2a2a;
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.5;
+    display: inline-block;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .archive-post__tag:hover {
+    color: #000000;
+    background: #d0d0d0;
+  }
+
+  .archive-post__tag--flag {
+    background: none;
+    padding: 0;
+    font-size: 14px;
+  }
+
+  .archive-post__tag--flag:hover {
+    background: none;
+  }
+
+  /* ── Expand / Collapse controls ─────────── */
+  .archive__controls {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+
+  .archive__controls button,
+  .archive__tagcloud-controls button {
+    background: #333333;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .archive__controls button:hover,
+  .archive__tagcloud-controls button:hover {
+    background: #444444;
+    border-color: #444444;
+    color: #ffffff;
+  }
+
+  /* ── Tag cloud pills ───────────────────── */
+  .archive__tagcloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 0;
+    padding-bottom: 24px;
+  }
+
+  .archive__tagcloud--collapsed {
+    display: none;
+  }
+
+  .archive__tagcloud-controls {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .archive__pill {
+    font-size: 13px;
+    font-weight: 500;
+    color: #b0b0b0;
+    background: #2a2a2a;
+    border-radius: 16px;
+    padding: 2px 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    line-height: 1.5;
+  }
+
+  .archive__pill:hover {
+    color: #000000;
+    background: #d0d0d0;
+  }
+
+  .archive__pill--flag {
+    font-size: 15px;
+  }
+
+  .archive__subtitle {
+    font-size: 33.75px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #ffffff;
+  }
+</style>
+
+<div class="archive">
+
+  <div class="archive__header">
+    <h1 class="archive__title">Tags</h1>
+    <p class="archive__count">{{ site.tags | size }} Tags</p>
+  </div>
+
+  <h2 class="archive__subtitle">Tag Cloud</h2>
+
+  <div class="archive__tagcloud-controls">
+    <button onclick="document.getElementById('tagcloud').classList.remove('archive__tagcloud--collapsed')">
+      Show tags
+    </button>
+    <button onclick="document.getElementById('tagcloud').classList.add('archive__tagcloud--collapsed')">
+      Hide tags
+    </button>
+  </div>
+
+  <div class="archive__tagcloud" id="tagcloud">
+    {% assign sorted_tags = site.tags | sort %}
+    {% for tag_data in sorted_tags %}
+      {% if tag_data[0] == "English" %}
+        <a class="archive__pill archive__pill--flag" href="/tags/?tag=English" title="English ({{ tag_data[1] | size }})">🇬🇧</a>
+      {% endif %}
+    {% endfor %}
+    {% for tag_data in sorted_tags %}
+      {% if tag_data[0] == "German" %}
+        <a class="archive__pill archive__pill--flag" href="/tags/?tag=German" title="German ({{ tag_data[1] | size }})">🇩🇪</a>
+      {% endif %}
+    {% endfor %}
+    {% for tag_data in sorted_tags %}
+      {% assign tag_name = tag_data[0] %}
+      {% unless tag_name == "English" or tag_name == "German" %}
+        <a class="archive__pill" href="/tags/?tag={{ tag_name | url_encode }}">{{ tag_name }}</a>
+      {% endunless %}
+    {% endfor %}
+  </div>
+
+  <h2 class="archive__subtitle">Tag List</h2>
+
+  <div class="archive__controls">
+    <button onclick="document.querySelectorAll('.archive details').forEach(d => d.open = true)">
+      Expand all
+    </button>
+    <button onclick="document.querySelectorAll('.archive details').forEach(d => d.open = false)">
+      Collapse all
+    </button>
+  </div>
+
+  {% assign sorted_tags = site.tags | sort %}
+
+  {% for tag_data in sorted_tags %}
+    {% assign tag_name = tag_data[0] %}
+    {% assign tag_posts = tag_data[1] %}
+
+    <details class="archive-year" id="tag-{{ tag_name | slugify }}">
+      <summary>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 6 15 12 9 18"></polyline>
+        </svg>
+        {% if tag_name == "English" %}
+          <span class="archive-year__label">🇬🇧 English</span>
+        {% elsif tag_name == "German" %}
+          <span class="archive-year__label">🇩🇪 German</span>
+        {% else %}
+          <span class="archive-year__label">{{ tag_name }}</span>
+        {% endif %}
+        <span class="archive-year__badge">{{ tag_posts | size }}</span>
+      </summary>
+
+      <div class="archive-year__content">
+        <ul class="archive-posts">
+          {% for post in tag_posts %}
+            <li class="archive-post">
+              <span class="archive-post__day">{{ post.date | date: "%d %b %Y" }}</span>
+              <div class="archive-post__body">
+                <a class="archive-post__link" href="{{ post.url | relative_url }}">{{ post.title }}</a>
+                {% if post.description and post.description != "" %}
+                  <p class="archive-post__desc">{{ post.description }}</p>
+                {% endif %}
+                {% if post.tags.size > 0 %}
+                  <div class="archive-post__tags">
+                    {% for t in post.tags %}
+                      {% if t == "English" %}
+                        <a class="archive-post__tag archive-post__tag--flag" href="/tags/?tag=English" title="English">🇬🇧</a>
+                      {% endif %}
+                      {% if t == "German" %}
+                        <a class="archive-post__tag archive-post__tag--flag" href="/tags/?tag=German" title="German">🇩🇪</a>
+                      {% endif %}
+                    {% endfor %}
+                    {% for t in post.tags %}
+                      {% unless t == "English" or t == "German" %}
+                        <a class="archive-post__tag" href="/tags/?tag={{ t | url_encode }}">{{ t }}</a>
+                      {% endunless %}
+                    {% endfor %}
+                  </div>
+                {% elsif post.categories.size > 0 %}
+                  <div class="archive-post__tags">
+                    {% for cat in post.categories %}
+                      {% if cat == "English" %}
+                        <a class="archive-post__tag archive-post__tag--flag" href="/tags/?tag=English" title="English">🇬🇧</a>
+                      {% endif %}
+                      {% if cat == "German" %}
+                        <a class="archive-post__tag archive-post__tag--flag" href="/tags/?tag=German" title="German">🇩🇪</a>
+                      {% endif %}
+                    {% endfor %}
+                    {% for cat in post.categories %}
+                      {% unless cat == "English" or cat == "German" %}
+                        <a class="archive-post__tag" href="/tags/?tag={{ cat | url_encode }}">{{ cat }}</a>
+                      {% endunless %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+  {% endfor %}
+
+</div>
+
+<script>
+// Auto-open tag from ?tag= parameter
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var tag = params.get('tag');
+  if (tag) {
+    var el = document.getElementById('tag-' + tag.toLowerCase().replace(/\s+/g, '-'));
+    if (el) {
+      el.open = true;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+})();
+</script>
