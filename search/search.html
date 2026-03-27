@@ -1,0 +1,462 @@
+---
+layout: page
+title: Search
+permalink: /search/
+---
+
+<style>
+  .search-box {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    font-size: 1rem;
+    border: 2px solid #dde1e7;
+    border-radius: 10px;
+    background: #fff;
+    color: #09090a;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .search-box input:focus {
+    border-color: #dde1e7;
+  }
+
+  .search-box input::placeholder {
+    color: #a0a0a0;
+  }
+
+  .search-box svg {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    stroke: #a0a0a0;
+    pointer-events: none;
+  }
+
+  .search-results-count {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-results-count .result-number {
+    color: #fff;
+    font-style: italic;
+  }
+
+  .search-sort-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-sort-btn {
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: #fff;
+    background: #333;
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .search-sort-btn:hover {
+    background: #ccc;
+    color: #09090a;
+  }
+
+  .search-sort-btn.active {
+    background: #213bf9;
+    color: #fff;
+  }
+
+  .search-sort-btn.active:hover {
+    background: #1a30c7;
+    color: #fff;
+  }
+
+  .sort-arrow {
+    font-size: 0.7rem;
+  }
+
+  .search-result-item {
+    margin-bottom: 1.2rem;
+  }
+
+  .search-result-date {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    margin-bottom: 0.2rem;
+  }
+
+  .search-result-title {
+    margin: 0 0 0.3rem 0;
+    font-size: 1.1rem;
+  }
+
+  .search-result-title a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .search-result-title a:hover {
+    color: #213bf9;
+  }
+
+  .search-result-description {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    margin: 0 0 0.4rem 0;
+    line-height: 1.5;
+  }
+
+  .search-result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .search-result-tags a {
+    font-size: 0.75rem;
+    color: #b0b0b0 !important;
+    background: #2a2a2a !important;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .search-result-tags a:hover {
+    background: #d0d0d0 !important;
+    color: #000000 !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+
+  .search-hint {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    margin-bottom: 1rem;
+  }
+
+  .search-result-snippet {
+    font-size: 0.85rem;
+    color: #888;
+    margin: 0.2rem 0 0.4rem 0;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .search-result-snippet strong {
+    color: #fff;
+    font-style: normal;
+  }
+
+  mark {
+    background: rgba(33, 59, 249, 0.12);
+    border-radius: 2px;
+    padding: 0 2px;
+    color: inherit;
+  }
+</style>
+
+<div class="search-box">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+       stroke-width="2" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round"
+          d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
+  </svg>
+  <input type="text" id="searchInput" placeholder="Suchbegriff eingeben…" autofocus>
+</div>
+
+<div id="resultsCount" class="search-results-count"></div>
+<div id="sortBar" class="search-sort-bar" style="display:none;">
+  <button class="search-sort-btn active" id="sortDate" onclick="toggleSort('date')">Date <span class="sort-arrow" id="arrowDate">▼</span></button>
+  <button class="search-sort-btn" id="sortRelevance" onclick="toggleSort('relevance')">Relevance <span class="sort-arrow" id="arrowRelevance">▼</span></button>
+</div>
+<div id="results"></div>
+
+<!-- Lunr.js -->
+<script src="/js/lunr.min.js"></script>
+
+<script>
+var idx, docMap = {}, documents = [];
+var input = document.getElementById('searchInput');
+var resultsDiv = document.getElementById('results');
+var countDiv = document.getElementById('resultsCount');
+var sortBar = document.getElementById('sortBar');
+var ready = false;
+
+// Sort state: 'date' or 'relevance', direction: 'desc' or 'asc'
+var sortMode = 'date';
+var sortDir = 'desc';
+var lastResults = [];
+var lastTerms = [];
+
+// Load prebuilt index and document data in parallel
+Promise.all([
+  fetch('/search-index.json').then(function(r) { return r.json(); }),
+  fetch('/search-data.json').then(function(r) { return r.json(); })
+]).then(function(results) {
+  idx = lunr.Index.load(results[0]);
+  documents = results[1];
+  documents.forEach(function(doc) {
+    docMap[doc.url] = doc;
+  });
+  ready = true;
+
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get('q');
+  if (q) {
+    input.value = q;
+    doSearch();
+  } else if (input.value.trim()) {
+    doSearch();
+  }
+});
+
+function highlight(text, terms) {
+  if (!terms.length || !text) return text || '';
+  var re = new RegExp('(' + terms.map(function(t) {
+    return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }).join('|') + ')', 'gi');
+  return text.replace(re, '<mark>$1</mark>');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildSnippet(content, terms) {
+  if (!content || !terms.length) return '';
+
+  var words = content.split(/\s+/);
+  if (words.length === 0) return '';
+
+  var singleTerm = (terms.length === 1);
+  var ctx = singleTerm ? 10 : 3;
+
+  // Find first occurrence index for each term
+  var matches = [];
+  terms.forEach(function(term) {
+    var termLower = term.toLowerCase();
+    for (var i = 0; i < words.length; i++) {
+      if (words[i].toLowerCase().indexOf(termLower) !== -1) {
+        matches.push({ idx: i, term: term });
+        break;
+      }
+    }
+  });
+
+  if (matches.length === 0) return '';
+
+  // Build ranges [start, end] for each match
+  var ranges = matches.map(function(m) {
+    return [Math.max(0, m.idx - ctx), Math.min(words.length - 1, m.idx + ctx)];
+  });
+
+  // Sort ranges by start
+  ranges.sort(function(a, b) { return a[0] - b[0]; });
+
+  // Merge overlapping ranges
+  var merged = [ranges[0]];
+  for (var i = 1; i < ranges.length; i++) {
+    var last = merged[merged.length - 1];
+    if (ranges[i][0] <= last[1] + 1) {
+      last[1] = Math.max(last[1], ranges[i][1]);
+    } else {
+      merged.push(ranges[i]);
+    }
+  }
+
+  // Build all matched terms for bolding
+  var termsLower = terms.map(function(t) { return t.toLowerCase(); });
+
+  function boldWord(w) {
+    var wLower = w.toLowerCase();
+    for (var t = 0; t < termsLower.length; t++) {
+      if (wLower.indexOf(termsLower[t]) !== -1) {
+        // Bold the matching part
+        var idx = wLower.indexOf(termsLower[t]);
+        var before = escapeHtml(w.substring(0, idx));
+        var match = escapeHtml(w.substring(idx, idx + terms[t].length));
+        var after = escapeHtml(w.substring(idx + terms[t].length));
+        return before + '<strong>' + match + '</strong>' + after;
+      }
+    }
+    return escapeHtml(w);
+  }
+
+  // Build snippet parts
+  var parts = merged.map(function(range) {
+    var slice = [];
+    for (var j = range[0]; j <= range[1]; j++) {
+      slice.push(boldWord(words[j]));
+    }
+    return slice.join(' ');
+  });
+
+  return '„' + parts.join(' … ') + '"';
+}
+
+function updateSortButtons() {
+  var btnDate = document.getElementById('sortDate');
+  var btnRel = document.getElementById('sortRelevance');
+  var arrowDate = document.getElementById('arrowDate');
+  var arrowRel = document.getElementById('arrowRelevance');
+
+  btnDate.className = 'search-sort-btn' + (sortMode === 'date' ? ' active' : '');
+  btnRel.className = 'search-sort-btn' + (sortMode === 'relevance' ? ' active' : '');
+
+  arrowDate.textContent = (sortMode === 'date') ? (sortDir === 'desc' ? '▼' : '▲') : '▼';
+  arrowRel.textContent = (sortMode === 'relevance') ? (sortDir === 'desc' ? '▼' : '▲') : '▼';
+}
+
+function toggleSort(mode) {
+  if (sortMode === mode) {
+    sortDir = (sortDir === 'desc') ? 'asc' : 'desc';
+  } else {
+    sortMode = mode;
+    sortDir = 'desc';
+  }
+  updateSortButtons();
+  renderResults();
+}
+
+function sortResults(results) {
+  var sorted = results.slice();
+  if (sortMode === 'date') {
+    sorted.sort(function(a, b) {
+      var docA = docMap[a.ref];
+      var docB = docMap[b.ref];
+      if (!docA || !docB) return 0;
+      var dateA = docA.date || '';
+      var dateB = docB.date || '';
+      var cmp = dateA < dateB ? -1 : (dateA > dateB ? 1 : 0);
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+  } else {
+    sorted.sort(function(a, b) {
+      var cmp = (b.score || 0) - (a.score || 0);
+      return sortDir === 'desc' ? cmp : -cmp;
+    });
+  }
+  return sorted;
+}
+
+function renderResults() {
+  resultsDiv.innerHTML = '';
+
+  if (lastResults.length === 0) return;
+
+  var sorted = sortResults(lastResults);
+
+  sorted.forEach(function (r) {
+    var doc = docMap[r.ref];
+    if (!doc) return;
+    var item = document.createElement('div');
+    item.className = 'search-result-item';
+
+    var tagsHtml = '';
+    if (doc.tags && doc.tags.length) {
+      tagsHtml = '<div class="search-result-tags">' +
+        doc.tags.map(function (tag) {
+          return '<a href="/tags/?tag=' + encodeURIComponent(tag) + '">' + tag + '</a>';
+        }).join('') +
+        '</div>';
+    }
+
+    var snippetHtml = '';
+    var cleanContent = (doc.content || '').replace(/<[^>]*>/g, '');
+    var snippet = buildSnippet(cleanContent, lastTerms);
+    if (snippet) {
+      snippetHtml = '<p class="search-result-snippet">' + snippet + '</p>';
+    }
+
+    item.innerHTML =
+      '<div class="search-result-date">' + (doc.date_display || doc.date) + '</div>' +
+      '<h3 class="search-result-title"><a href="' + doc.url + '">' + highlight(doc.title, lastTerms) + '</a></h3>' +
+      (doc.description ? '<p class="search-result-description">' + highlight(doc.description, lastTerms) + '</p>' : '') +
+      snippetHtml +
+      tagsHtml;
+
+    resultsDiv.appendChild(item);
+  });
+}
+
+function doSearch() {
+  if (!ready) return;
+
+  var query = input.value.trim();
+  resultsDiv.innerHTML = '';
+  countDiv.textContent = '';
+  sortBar.style.display = 'none';
+  lastResults = [];
+  lastTerms = [];
+
+  if (!query) return;
+
+  // Lunr search with required terms
+  var lunrResults = [];
+  try {
+    lunrResults = idx.search(query.split(/\s+/).map(function(term) {
+      return '+' + term + '*';
+    }).join(' '));
+  } catch(e) {
+    lunrResults = [];
+  }
+
+  var foundUrls = {};
+  lunrResults.forEach(function(r) { foundUrls[r.ref] = true; });
+
+  // Fallback: simple case-insensitive string search for documents Lunr missed
+  var queryLower = query.toLowerCase();
+  var queryTerms = queryLower.split(/\s+/);
+  documents.forEach(function(doc) {
+    if (foundUrls[doc.url]) return;
+    var haystack = (doc.title + ' ' + (doc.description || '') + ' ' + (doc.tags || []).join(' ') + ' ' + (doc.content || '')).toLowerCase();
+    var allMatch = queryTerms.every(function(term) {
+      return haystack.indexOf(term) !== -1;
+    });
+    if (allMatch) {
+      lunrResults.push({ ref: doc.url, score: 0 });
+    }
+  });
+
+  lastResults = lunrResults;
+  lastTerms = query.split(/\s+/);
+
+  if (lastResults.length === 0) {
+    countDiv.textContent = 'Keine Ergebnisse für „' + query + '"';
+    return;
+  }
+
+  countDiv.innerHTML = '<span class="result-number">' + lastResults.length + '</span> Ergebnis' + (lastResults.length > 1 ? 'se' : '') + ' für „' + query + '"';
+  sortBar.style.display = 'flex';
+  updateSortButtons();
+  renderResults();
+}
+
+input.addEventListener('input', doSearch);
+</script>
